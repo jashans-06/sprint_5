@@ -5,6 +5,12 @@ import functions
 
 app = FastAPI()
 
+app.add_middleware, CORSMiddleware,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 class Newpackage(BaseModel):
     name: str
     destination: str
@@ -32,6 +38,14 @@ def register_package(package:Newpackage, token = Header(None)):
         raise HTTPException(status_code=401, detail="Invalid token")
     
     result = functions.register_package(name=package.name, destination=package.destination, weight=package.weight, arrival_date=package.arrival_date, status=package.status)
+    return result
+
+@app.get("/packages/status")
+def get_statistics(token = Header(None)):
+    username=functions.verify_token(token=token,token_type="access")
+    if not username:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    result = functions.get_summary()
     return result
 
 @app.get("/packages/{id}")
@@ -74,13 +88,6 @@ def get_dispatch_batches(destination: str = None, vehicle_number: str = None, st
     result = functions.get_all_dispatches(destination, vehicle_number, status)
     return result
 
-@app.get("/packages/status")
-def get_statistics(token = Header(None)):
-    username=functions.verify_token(token=token,token_type="access")
-    if not username:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    result = functions.get_summary()
-    return result
 
 @app.post("/dispatch_batches")
 def create_dispatch_batch(package: Dispatch, token = Header(None)):
